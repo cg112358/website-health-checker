@@ -1,0 +1,16 @@
+{
+  "name": "website-health-checker",
+  "version": "1.0.0",
+  "description": "CLI website health checker with Playwright",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "check": "node index.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "playwright": "^1.59.1"
+  }
+}
