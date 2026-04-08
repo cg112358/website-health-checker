@@ -1,6 +1,7 @@
 const { chromium } = require("playwright");
 const { runPageChecks } = require("./checks/pageChecks");
 const { writeReport } = require("./utils/writeReport");
+const createRunFolder = require("./utils/createRunFolder");
 
 async function main() {
   const targetUrl = process.argv[2];
@@ -11,14 +12,16 @@ async function main() {
     process.exit(1);
   }
 
+  const runPath = createRunFolder();
+
   let browser;
 
   try {
     browser = await chromium.launch({ headless: true });
     const page = await browser.newPage();
 
-    const report = await runPageChecks(page, targetUrl, keyword);
-    const reportPath = writeReport(report);
+    const report = await runPageChecks(page, targetUrl, keyword, runPath);
+    const reportPath = writeReport(report, runPath);
 
     console.log("\n=== Website Health Check ===");
     console.log(`URL: ${report.url}`);

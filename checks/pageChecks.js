@@ -1,4 +1,6 @@
-async function runPageChecks(page, targetUrl, keyword) {
+const path = require("path");
+
+async function runPageChecks(page, targetUrl, keyword, runPath) {
   const startedAt = Date.now();
 
   const response = await page.goto(targetUrl, {
@@ -33,14 +35,14 @@ async function runPageChecks(page, targetUrl, keyword) {
   let screenshotPath = null;
 
   if (!passed) {
-    const safeTimestamp = new Date().toISOString().replace(/[:.]/g, "-");
-    screenshotPath = `artifacts/failure-${safeTimestamp}.png`;
+    screenshotPath = path.join(runPath, "failure.png");
 
     await page.screenshot({
       path: screenshotPath,
       fullPage: true,
     });
   }
+
   return {
     url: targetUrl,
     status: passed ? "PASS" : "FAIL",
@@ -49,7 +51,7 @@ async function runPageChecks(page, targetUrl, keyword) {
     status_code: statusCode,
     title,
     keyword: keyword || null,
-    screenshot: screenshotPath, 
+    screenshot: screenshotPath,
     checks,
   };
 }
