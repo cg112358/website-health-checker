@@ -2,6 +2,7 @@ const { chromium } = require("playwright");
 const { runPageChecks } = require("./checks/pageChecks");
 const { writeReport } = require("./utils/writeReport");
 const createRunFolder = require("./utils/createRunFolder");
+const LOAD_THRESHOLD_MS = 12000;
 
 async function main() {
   const targetUrl = process.argv[2];
@@ -38,7 +39,9 @@ async function main() {
     console.log("\nChecks:");
     console.log(`- Status Code OK: ${report.checks.status_code_ok}`);
     console.log(`- Title Present: ${report.checks.title_present}`);
-    console.log(`- Load Under 10000ms: ${report.checks.load_under_10000ms}`);
+    console.log(
+      `- Load Time OK (< ${LOAD_THRESHOLD_MS} ms): ${report.checks.load_time_ok}`,
+    );
 
     if (report.keyword) {
       console.log(`- Keyword Found: ${report.checks.keyword_found}`);
