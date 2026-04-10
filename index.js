@@ -3,15 +3,25 @@ const { runPageChecks } = require("./checks/pageChecks");
 const { writeReport } = require("./utils/writeReport");
 const createRunFolder = require("./utils/createRunFolder");
 const LOAD_THRESHOLD_MS = 12000;
+const parseArgs = require("./utils/parseArgs");
+
+const loadConfig = require("./config/loadConfig");
 
 async function main() {
-  const targetUrl = process.argv[2];
-  const keyword = process.argv[3] || null;
+  const args = parseArgs(process.argv);
 
-  if (!targetUrl) {
-    console.error("Usage: node index.js <url> [keyword]");
-    process.exit(1);
+  if (args.mode === "config") {
+    const config = loadConfig(args.configPath);
+    console.log(config);
+    process.exit(0);
   }
+
+  if (args.mode !== "single") {
+    throw new Error("Unsupported mode");
+  }
+
+  const targetUrl = args.url;
+  const keyword = args.keyword;
 
   const runPath = createRunFolder();
 

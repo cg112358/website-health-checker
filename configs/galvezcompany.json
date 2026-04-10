@@ -1,0 +1,21 @@
+{
+  "site_name": "Galvez Company",
+  "load_threshold_ms": 12000,
+  "pages": [
+    {
+      "name": "home",
+      "url": "https://galvezcompany.dreamhosters.com/",
+      "keyword": "Your Vision. Our Code. Results."
+    },
+    {
+      "name": "services",
+      "url": "https://galvezcompany.dreamhosters.com/services/",
+      "keyword": "Services"
+    },
+    {
+      "name": "contact",
+      "url": "https://galvezcompany.dreamhosters.com/contact/",
+      "keyword": "Get in Touch"
+    }
+  ]
+}
