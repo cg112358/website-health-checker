@@ -16,7 +16,7 @@ async function main() {
 
     if (args.mode === "config") {
       const config = validateConfig(loadConfig(args.configPath));
-      const runPath = createRunFolder();
+      const { runId, runPath, checkedAt } = createRunFolder();
 
       browser = await chromium.launch({ headless: true });
       const page = await browser.newPage();
@@ -39,6 +39,9 @@ async function main() {
         console.log(`Checked: ${pageConfig.name} -> ${result.status}`);
       }
 
+      console.log(`Run ID: ${runId}`);
+      console.log(`Artifacts: ${runPath}`);
+
       console.log("\n=== Multi-Page Summary ===");
 
       results.forEach((result) => {
@@ -53,7 +56,10 @@ async function main() {
 
     const targetUrl = args.url;
     const keyword = args.keyword;
-    const runPath = createRunFolder();
+    const { runId, runPath, checkedAt } = createRunFolder();
+
+    console.log(`Run ID: ${runId}`);
+    console.log(`Artifacts: ${runPath}`);
 
     browser = await chromium.launch({ headless: true });
     const page = await browser.newPage();
