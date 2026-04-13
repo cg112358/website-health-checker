@@ -16,10 +16,37 @@ async function main() {
 
     if (args.mode === "config") {
       const config = validateConfig(loadConfig(args.configPath));
-      console.log(config);
+      const runPath = createRunFolder();
+
+      browser = await chromium.launch({ headless: true });
+      const page = await browser.newPage();
+
+      const results = [];
+
+      for (const pageConfig of config.pages) {
+        const result = await runPageChecks(
+          page,
+          pageConfig.url,
+          pageConfig.keyword,
+          runPath,
+        );
+
+        results.push({
+          name: pageConfig.name,
+          ...result,
+        });
+
+        console.log(`Checked: ${pageConfig.name} -> ${result.status}`);
+      }
+
+      console.log("\n=== Multi-Page Summary ===");
+
+      results.forEach((result) => {
+        console.log(`${result.name}: ${result.status}`);
+      });
+
       return;
     }
-
     if (args.mode !== "single") {
       throw new Error("Unsupported mode");
     }
