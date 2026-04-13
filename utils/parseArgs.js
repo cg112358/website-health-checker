@@ -12,6 +12,10 @@ function parseArgs(argv) {
     };
   }
 
+  if (args[0] && args[0].startsWith("--")) {
+    throw new Error(`Unknown option: ${args[0]}`);
+  }
+
   if (args.length >= 2) {
     return {
       mode: "single",

@@ -6,28 +6,28 @@ const LOAD_THRESHOLD_MS = 12000;
 const parseArgs = require("./utils/parseArgs");
 
 const loadConfig = require("./config/loadConfig");
+const validateConfig = require("./utils/validateConfig");
 
 async function main() {
-  const args = parseArgs(process.argv);
-
-  if (args.mode === "config") {
-    const config = loadConfig(args.configPath);
-    console.log(config);
-    process.exit(0);
-  }
-
-  if (args.mode !== "single") {
-    throw new Error("Unsupported mode");
-  }
-
-  const targetUrl = args.url;
-  const keyword = args.keyword;
-
-  const runPath = createRunFolder();
-
   let browser;
 
   try {
+    const args = parseArgs(process.argv);
+
+    if (args.mode === "config") {
+      const config = validateConfig(loadConfig(args.configPath));
+      console.log(config);
+      return;
+    }
+
+    if (args.mode !== "single") {
+      throw new Error("Unsupported mode");
+    }
+
+    const targetUrl = args.url;
+    const keyword = args.keyword;
+    const runPath = createRunFolder();
+
     browser = await chromium.launch({ headless: true });
     const page = await browser.newPage();
 
