@@ -1,8 +1,10 @@
 # Website Health Checker
 
-CLI-based website health checker built with Playwright.
+A deterministic validation engine for AI-built and conventionally built web systems.
 
-Performs automated QA-style validation on a given URL, measuring performance, verifying page content, and generating structured reports with optional failure screenshots.
+CLI-based validation engine built with Playwright, designed to verify multi-page web systems through deterministic checks, artifact generation, and reproducible reporting.
+
+Performs automated QA-style validation on web pages, measuring performance, verifying content, and generating structured, audit-ready artifacts.
 
 ---
 
@@ -11,22 +13,23 @@ Performs automated QA-style validation on a given URL, measuring performance, ve
 - ✅ HTTP status validation
 - ✅ Page title extraction
 - ✅ Load time measurement
-- ✅ Keyword presence check (optional)
+- ✅ Keyword presence validation (required in single-page mode)
 - ✅ JSON report generation
 - ✅ Automatic failure screenshots
+- ✅ Multi-page config-based execution
 
 ---
 
 ## 💡 Why This Exists
 
-Modern applications require fast, reliable validation of web experiences.
+Modern applications — especially AI-generated ones — require fast, reliable validation.
 
-This tool provides a lightweight, automated way to:
+This tool provides a lightweight validation engine to:
 
-- validate website health
-- catch performance issues early
-- generate reproducible QA artifacts
-- simulate real-world testing workflows
+- validate AI-generated web applications
+- ensure correctness across multi-page systems
+- generate audit-ready validation artifacts
+- provide reproducible execution evidence
 
 ---
 
@@ -41,29 +44,122 @@ npx playwright install
 
 ## ▶️ Usage
 
-```bash
-node index.js <url> [keyword]
-```
-
-### Examples
+### Single Page Mode
 
 ```bash
-node index.js https://example.com
-node index.js https://example.com Example
+node index.js <url> "<keyword>"
 ```
+
+⚠️ Keyword is currently required in single-page mode.
+
+### Example
+
+```bash
+node index.js https://example.com "Example"
+```
+
+---
+
+### 🧪 Multi-Page Validation
+
+Run multi-page validation using a config file:
+
+```bash
+node index.js --config <config-path>
+```
+
+#### Example
+
+```bash
+node index.js --config configs/galvezcompany.json
+```
+
+Multi-page validation is driven by a JSON config file:
+
+```json
+{
+  "site_name": "galvezcompany",
+  "pages": [
+    {
+      "name": "home",
+      "url": "https://example.com",
+      "keyword": "Example"
+    }
+  ]
+}
+```
+
+Each page is:
+
+- executed independently
+- validated using deterministic checks
+- collected into a single run result
+
+---
+
+## 🖥️ Example Output
+
+### Single Page Run
+
+```text
+Run ID: 2026-04-13T16-31-43-184Z_aabknv
+Artifacts: artifacts/run_2026-04-13T16-31-43-184Z_aabknv
+
+=== Website Health Check ===
+URL: https://example.com
+Status: PASS
+HTTP Status Code: 200
+Load Time: 365 ms
+Title: Example Domain
+Keyword Checked: Example
+Keyword Found: true
+
+Checks:
+- Status Code OK: true
+- Title Present: true
+- Load Time OK (< 12000 ms): true
+- Keyword Found: true
+
+Report saved to: artifacts/run_<id>/report.json
+```
+
+### Multi-Page Run
+
+```text
+Checked: home -> PASS
+Checked: services -> PASS
+Checked: contact -> PASS
+
+Run ID: 2026-04-13T16-30-03-621Z_wpgy6g
+Artifacts: artifacts/run_2026-04-13T16-30-03-621Z_wpgy6g
+
+=== Multi-Page Summary ===
+home: PASS
+services: PASS
+contact: PASS
+```
+
+---
 
 ## 📊 Output
 
-Each run generates:
+Each run generates a structured artifact:
 
-- JSON report → `/artifacts/report-<timestamp>.json`
-- Screenshot (on failure) → `/artifacts/failure-<timestamp>.png`
+```text
+artifacts/run_<id>/
+  ├── report.json
+  ├── failure.png (if applicable)
+```
+
+This artifact acts as a run-level validation record for debugging and analysis.
+
+---
 
 ## 🧠 Checks Performed
 
 - Status Code OK (200)
 - Title Present
-- Load Time under threshold (10,000ms)
+- Load Time under threshold (12,000ms)
 - Keyword Found (if provided)
 
 ## 📁 Project Structure
@@ -72,18 +168,24 @@ Each run generates:
 checks/        # Page validation logic
 utils/         # Helper utilities
 artifacts/     # Generated reports and screenshots (ignored by git)
+config/        # Config-based multi-page validation
 index.js       # CLI entry point
 ```
 
+---
+
 ## 🎯 Purpose
 
-This project simulates real-world QA validation workflows using Playwright.
+This project represents a deterministic validation system designed for modern web environments.
 
-Designed to:
+It demonstrates:
 
-- demonstrate automated testing principles
-- generate deterministic artifacts
-- provide a foundation for scalable validation tools
+- validation of AI-assisted builds
+- production-style QA workflows
+- reproducible validation pipelines
+- artifact-based debugging systems
+
+---
 
 ## 📄 License
 
