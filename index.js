@@ -113,9 +113,13 @@ async function main() {
     console.log(`Load Time: ${report.load_time_ms} ms`);
     console.log(`Title: ${report.title || "(none)"}`);
 
+    if (report.error_code) {
+      console.log(`Error Code: ${report.error_code}`);
+      console.log(`Error Message: ${report.error_message}`);
+    }
+
     if (report.keyword) {
       console.log(`Keyword Checked: ${report.keyword}`);
-      console.log(`Keyword Found: ${report.checks.keyword_found}`);
     }
 
     console.log("\nChecks:");
@@ -123,6 +127,9 @@ async function main() {
     console.log(`- Title Present: ${report.checks.title_present}`);
     console.log(
       `- Load Time OK (< ${LOAD_THRESHOLD_MS} ms): ${report.checks.load_time_ok}`,
+    );
+    console.log(
+      `- Navigation Completed: ${report.checks.navigation_completed}`,
     );
 
     if (report.keyword) {
