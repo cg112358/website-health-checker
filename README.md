@@ -13,7 +13,7 @@ Performs automated QA-style validation on web pages, measuring performance, veri
 - ✅ HTTP status validation
 - ✅ Page title extraction
 - ✅ Load time measurement
-- ✅ Keyword presence validation (required in single-page mode)
+- ✅ Optional keyword presence validation in single-page mode
 - ✅ JSON report generation
 - ✅ Automatic failure screenshots
 - ✅ Multi-page config-based execution
@@ -47,14 +47,13 @@ npx playwright install
 ### Single Page Mode
 
 ```bash
-node index.js <url> "<keyword>"
+node index.js <url> [keyword]
 ```
-
-⚠️ Keyword is currently required in single-page mode.
 
 ### Example
 
 ```bash
+node index.js https://example.com
 node index.js https://example.com "Example"
 ```
 
@@ -118,9 +117,10 @@ Checks:
 - Status Code OK: true
 - Title Present: true
 - Load Time OK (< 12000 ms): true
+- Navigation Completed: true
 - Keyword Found: true
 
-Report saved to: artifacts/run_<id>/report.json
+JSON report: artifacts/run_<id>/report.json
 ```
 
 ### Multi-Page Run

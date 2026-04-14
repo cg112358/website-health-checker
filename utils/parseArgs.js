@@ -1,9 +1,14 @@
 function parseArgs(argv) {
   const args = argv.slice(2);
 
+  if (args.length === 0) {
+    throw new Error("Invalid arguments");
+  }
+
+  // Config mode
   if (args[0] === "--config") {
-    if (!args[1]) {
-      throw new Error("Missing config file path");
+    if (args.length !== 2) {
+      throw new Error("Invalid arguments");
     }
 
     return {
@@ -12,15 +17,12 @@ function parseArgs(argv) {
     };
   }
 
-  if (args[0] && args[0].startsWith("--")) {
-    throw new Error(`Unknown option: ${args[0]}`);
-  }
-
-  if (args.length >= 2) {
+  // Single-page mode (keyword OPTIONAL now)
+  if (args.length === 1 || args.length === 2) {
     return {
       mode: "single",
       url: args[0],
-      keyword: args[1],
+      keyword: args[1] || null,
     };
   }
 
