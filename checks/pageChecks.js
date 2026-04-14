@@ -1,8 +1,6 @@
 const path = require("path");
 
-const LOAD_THRESHOLD_MS = 12000;
-
-async function runPageChecks(page, targetUrl, keyword, runPath) {
+async function runPageChecks(page, targetUrl, keyword, runPath, loadThresholdMs = 12000) {
   const startedAt = Date.now();
 
   const response = await page.goto(targetUrl, {
@@ -26,7 +24,7 @@ async function runPageChecks(page, targetUrl, keyword, runPath) {
   const checks = {
     status_code_ok: okStatus,
     title_present: titlePresent,
-    load_time_ok: loadTimeMs < LOAD_THRESHOLD_MS,
+    load_time_ok: loadTimeMs < loadThresholdMs,
     keyword_found: keyword ? keywordFound : null,
   };
 

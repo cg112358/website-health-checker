@@ -8,6 +8,8 @@ const parseArgs = require("./utils/parseArgs");
 const loadConfig = require("./config/loadConfig");
 const validateConfig = require("./utils/validateConfig");
 
+const { writeAggregateReport } = require("./utils/writeAggregateReport");
+
 async function main() {
   let browser;
 
@@ -17,6 +19,7 @@ async function main() {
     if (args.mode === "config") {
       const config = validateConfig(loadConfig(args.configPath));
       const { runId, runPath, checkedAt } = createRunFolder();
+      const loadThresholdMs = config.load_threshold_ms || LOAD_THRESHOLD_MS;
 
       browser = await chromium.launch({ headless: true });
       const page = await browser.newPage();
@@ -29,6 +32,7 @@ async function main() {
           pageConfig.url,
           pageConfig.keyword,
           runPath,
+          loadThresholdMs,
         );
 
         results.push({
@@ -39,6 +43,31 @@ async function main() {
         console.log(`Checked: ${pageConfig.name} -> ${result.status}`);
       }
 
+      const pagesChecked = results.length;
+      const pagesPassed = results.filter(
+        (result) => result.status === "PASS",
+      ).length;
+      const pagesFailed = results.filter(
+        (result) => result.status === "FAIL",
+      ).length;
+      const overallStatus = pagesFailed > 0 ? "FAIL" : "PASS";
+
+      const aggregateReport = {
+        run_id: runId,
+        checked_at: checkedAt,
+        site_name: config.site_name,
+        overall_status: overallStatus,
+        pages_checked: pagesChecked,
+        pages_passed: pagesPassed,
+        pages_failed: pagesFailed,
+        results,
+      };
+
+      const aggregateReportPath = writeAggregateReport(
+        aggregateReport,
+        runPath,
+      );
+
       console.log(`Run ID: ${runId}`);
       console.log(`Artifacts: ${runPath}`);
 
@@ -48,15 +77,25 @@ async function main() {
         console.log(`${result.name}: ${result.status}`);
       });
 
+      console.log("\n=== Aggregate Summary ===");
+      console.log(`Site: ${config.site_name}`);
+      console.log(`Overall Status: ${overallStatus}`);
+      console.log(`Pages Checked: ${pagesChecked}`);
+      console.log(`Pages Passed: ${pagesPassed}`);
+      console.log(`Pages Failed: ${pagesFailed}`);
+      console.log(`JSON report: ${aggregateReportPath.replace(/\\/g, "/")}`);
+      console.log(`Load Threshold: ${loadThresholdMs} ms`);
+
       return;
     }
+
     if (args.mode !== "single") {
       throw new Error("Unsupported mode");
     }
 
     const targetUrl = args.url;
     const keyword = args.keyword;
-    const { runId, runPath, checkedAt } = createRunFolder();
+    const { runId, runPath } = createRunFolder();
 
     console.log(`Run ID: ${runId}`);
     console.log(`Artifacts: ${runPath}`);
@@ -94,7 +133,7 @@ async function main() {
       console.log(`Screenshot saved: ${report.screenshot}`);
     }
 
-    console.log(`\nReport saved to: ${reportPath}`);
+    console.log(`\nJSON report: ${reportPath.replace(/\\/g, "/")}`);
   } catch (error) {
     console.error("\nHealth check failed.");
     console.error(error.message);
