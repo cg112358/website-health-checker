@@ -4,7 +4,7 @@ A deterministic validation engine for AI-built and conventionally built web syst
 
 CLI-based validation engine built with Playwright, designed to verify multi-page web systems through deterministic checks, artifact generation, and reproducible reporting.
 
-Performs automated QA-style validation on web pages, measuring performance, verifying content, and generating structured, audit-ready artifacts.
+Performs automated QA-style validation on web pages, verifying availability, performance, content integrity, and generating structured, audit-ready artifacts.
 
 ---
 
@@ -16,6 +16,7 @@ Performs automated QA-style validation on web pages, measuring performance, veri
 - ✅ Optional keyword presence validation in single-page mode
 - ✅ JSON report generation
 - ✅ Automatic failure screenshots
+- ✅ Deterministic, page-scoped screenshot artifacts (no overwrite in multi-page runs)
 - ✅ Multi-page config-based execution
 
 ---
@@ -30,6 +31,7 @@ This tool provides a lightweight validation engine to:
 - ensure correctness across multi-page systems
 - generate audit-ready validation artifacts
 - provide reproducible execution evidence
+- ensure deterministic validation behavior across repeated runs
 
 ---
 
@@ -143,12 +145,24 @@ contact: PASS
 
 ## 📊 Output
 
+### 📌 Artifact Behavior
+
+- Multi-page runs generate page-scoped failure screenshots:
+  - `home_failure.png`
+  - `services_failure.png`
+  - `contact_failure.png`
+- Single-page runs generate:
+  - `failure.png`
+
+This ensures artifacts are not overwritten and remain traceable per page.
+
 Each run generates a structured artifact:
 
 ```text
 artifacts/run_<id>/
-  ├── report.json
-  ├── failure.png (if applicable)
+├── report.json
+├── <page>_failure.png (multi-page failures)
+├── failure.png (single-page failures)
 ```
 
 This artifact acts as a run-level validation record for debugging and analysis.
