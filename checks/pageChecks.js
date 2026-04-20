@@ -1,5 +1,5 @@
 const path = require("path");
-
+const { runLinkChecks } = require("./linkChecks");
 const NAVIGATION_TIMEOUT_MS = 15000;
 
 async function safeCaptureScreenshot(page, screenshotPath) {
@@ -39,6 +39,8 @@ async function runPageChecks(
     const title = await page.title();
     const content = await page.content();
 
+    const linkResults = await runLinkChecks(page, targetUrl);
+
     const statusCode = response ? response.status() : null;
     const okStatus =
       typeof statusCode === "number" && statusCode >= 200 && statusCode < 400;
@@ -55,6 +57,7 @@ async function runPageChecks(
       title_present: titlePresent,
       load_time_ok: loadTimeMs < loadThresholdMs,
       keyword_found: keyword ? keywordFound : null,
+      links_ok: linkResults.broken_links === 0,
     };
 
     const passed = Object.values(checks).every((value) => {
@@ -81,6 +84,14 @@ async function runPageChecks(
       timeout_ms: NAVIGATION_TIMEOUT_MS,
       navigation_attempt: 1,
       checks,
+
+      link_summary: {
+        total_links: linkResults.total_links,
+        checked_links: linkResults.checked_links,
+        skipped_links: linkResults.skipped_links,
+        broken_links: linkResults.broken_links,
+      },
+      broken_links: linkResults.broken,
     };
   } catch (error) {
     const loadTimeMs = Date.now() - startedAt;
@@ -118,7 +129,15 @@ async function runPageChecks(
         title_present: false,
         load_time_ok: false,
         keyword_found: keyword ? false : null,
+        links_ok: false,
       },
+      link_summary: {
+        total_links: 0,
+        checked_links: 0,
+        skipped_links: 0,
+        broken_links: 0,
+      },
+      broken_links: [],
     };
   }
 }
