@@ -32,6 +32,7 @@ async function main() {
           pageConfig.url,
           pageConfig.keyword,
           runPath,
+          pageConfig.name,
           loadThresholdMs,
         );
 
@@ -103,7 +104,14 @@ async function main() {
     browser = await chromium.launch({ headless: true });
     const page = await browser.newPage();
 
-    const report = await runPageChecks(page, targetUrl, keyword, runPath);
+    const report = await runPageChecks(
+      page,
+      targetUrl,
+      keyword,
+      runPath,
+      null,
+      LOAD_THRESHOLD_MS,
+    );
     const reportPath = writeReport(report, runPath);
 
     console.log("\n=== Website Health Check ===");

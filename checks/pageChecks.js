@@ -19,11 +19,13 @@ async function runPageChecks(
   targetUrl,
   keyword,
   runPath,
+  pageName = null,
   loadThresholdMs = 12000,
 ) {
   const startedAt = Date.now();
   const checkedAt = new Date().toISOString();
-  const failureScreenshotPath = path.join(runPath, "failure.png");
+  const label = pageName || "single";
+  const failureScreenshotPath = path.join(runPath, `${label}_failure.png`);
 
   let response = null;
 
@@ -92,7 +94,10 @@ async function runPageChecks(
       errorCode = "NAVIGATION_TIMEOUT";
     }
 
-    const screenshotPath = await safeCaptureScreenshot(page, failureScreenshotPath);
+    const screenshotPath = await safeCaptureScreenshot(
+      page,
+      failureScreenshotPath,
+    );
 
     return {
       url: targetUrl,
