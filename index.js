@@ -1,5 +1,7 @@
 const { chromium } = require("playwright");
 const { runPageChecks } = require("./checks/pageChecks");
+const { extractLinks } = require("./checks/linkChecks");
+const { buildCrawlDiscovery } = require("./utils/crawlDiscovery");
 const { writeReport } = require("./utils/writeReport");
 const createRunFolder = require("./utils/createRunFolder");
 const LOAD_THRESHOLD_MS = 12000;
@@ -94,9 +96,9 @@ async function main() {
       throw new Error("Unsupported mode");
     }
 
-    const targetUrl = args.url;
+     const targetUrl = args.url;
     const keyword = args.keyword;
-    const { runId, runPath } = createRunFolder();
+    const { runId, runPath, checkedAt } = createRunFolder();
 
     console.log(`Run ID: ${runId}`);
     console.log(`Artifacts: ${runPath}`);
@@ -104,51 +106,141 @@ async function main() {
     browser = await chromium.launch({ headless: true });
     const page = await browser.newPage();
 
-    const report = await runPageChecks(
+    const seedReport = await runPageChecks(
       page,
       targetUrl,
       keyword,
       runPath,
-      null,
+      "seed",
       LOAD_THRESHOLD_MS,
     );
-    const reportPath = writeReport(report, runPath);
+
+    const extractedLinks = await extractLinks(page);
+    const discovery = buildCrawlDiscovery({
+      seedUrl: targetUrl,
+      links: extractedLinks.map((href) => ({ href })),
+    });
+
+    console.log(`\nDiscovered raw links: ${discovery.counts.raw}`);
+    console.log(
+      `Internal crawl candidates: ${discovery.counts.internal_candidates}`,
+    );
+    console.log(`Skipped links: ${discovery.counts.skipped}`);
+
+    const discoveredResults = [];
+
+    for (const candidate of discovery.candidates) {
+      const result = await runPageChecks(
+        page,
+        candidate.url,
+        null,
+        runPath,
+        null,
+        LOAD_THRESHOLD_MS,
+      );
+
+      discoveredResults.push({
+        name: candidate.url,
+        discovered_from: candidate.discovered_from,
+        source_href: candidate.source_href,
+        ...result,
+      });
+
+      console.log(`Checked discovered: ${candidate.url} -> ${result.status}`);
+    }
+
+    const results = [
+      {
+        name: "seed",
+        discovered_from: null,
+        source_href: null,
+        ...seedReport,
+      },
+      ...discoveredResults,
+    ];
+
+    const pagesChecked = results.length;
+    const pagesPassed = results.filter(
+      (result) => result.status === "PASS",
+    ).length;
+    const pagesFailed = results.filter(
+      (result) => result.status === "FAIL",
+    ).length;
+    const overallStatus = pagesFailed > 0 ? "FAIL" : "PASS";
+
+    const aggregateReport = {
+      run_id: runId,
+      checked_at: checkedAt,
+      mode: "single_with_crawl",
+      seed_url: targetUrl,
+      overall_status: overallStatus,
+      pages_checked: pagesChecked,
+      pages_passed: pagesPassed,
+      pages_failed: pagesFailed,
+      crawl_summary: {
+        enabled: true,
+        depth: 1,
+        raw_links_found: discovery.counts.raw,
+        discovered_internal_links: discovery.counts.internal_candidates,
+        skipped_links: discovery.counts.skipped,
+      },
+      discovery: {
+        candidates: discovery.candidates,
+        skipped: discovery.skipped,
+      },
+      results,
+    };
+
+    const aggregateReportPath = writeAggregateReport(
+      aggregateReport,
+      runPath,
+    );
 
     console.log("\n=== Website Health Check ===");
-    console.log(`URL: ${report.url}`);
-    console.log(`Status: ${report.status}`);
-    console.log(`HTTP Status Code: ${report.status_code}`);
-    console.log(`Load Time: ${report.load_time_ms} ms`);
-    console.log(`Title: ${report.title || "(none)"}`);
+    console.log(`Seed URL: ${seedReport.url}`);
+    console.log(`Seed Status: ${seedReport.status}`);
+    console.log(`Seed HTTP Status Code: ${seedReport.status_code}`);
+    console.log(`Seed Load Time: ${seedReport.load_time_ms} ms`);
+    console.log(`Seed Title: ${seedReport.title || "(none)"}`);
 
-    if (report.error_code) {
-      console.log(`Error Code: ${report.error_code}`);
-      console.log(`Error Message: ${report.error_message}`);
+    if (seedReport.error_code) {
+      console.log(`Seed Error Code: ${seedReport.error_code}`);
+      console.log(`Seed Error Message: ${seedReport.error_message}`);
     }
 
-    if (report.keyword) {
-      console.log(`Keyword Checked: ${report.keyword}`);
+    if (seedReport.keyword) {
+      console.log(`Keyword Checked: ${seedReport.keyword}`);
     }
 
-    console.log("\nChecks:");
-    console.log(`- Status Code OK: ${report.checks.status_code_ok}`);
-    console.log(`- Title Present: ${report.checks.title_present}`);
+    console.log("\nSeed Checks:");
+    console.log(`- Status Code OK: ${seedReport.checks.status_code_ok}`);
+    console.log(`- Title Present: ${seedReport.checks.title_present}`);
     console.log(
-      `- Load Time OK (< ${LOAD_THRESHOLD_MS} ms): ${report.checks.load_time_ok}`,
+      `- Load Time OK (< ${LOAD_THRESHOLD_MS} ms): ${seedReport.checks.load_time_ok}`,
     );
     console.log(
-      `- Navigation Completed: ${report.checks.navigation_completed}`,
+      `- Navigation Completed: ${seedReport.checks.navigation_completed}`,
     );
 
-    if (report.keyword) {
-      console.log(`- Keyword Found: ${report.checks.keyword_found}`);
+    if (seedReport.keyword) {
+      console.log(`- Keyword Found: ${seedReport.checks.keyword_found}`);
     }
 
-    if (report.screenshot) {
-      console.log(`Screenshot saved: ${report.screenshot}`);
+    if (seedReport.screenshot) {
+      console.log(`Screenshot saved: ${seedReport.screenshot}`);
     }
 
-    console.log(`\nJSON report: ${reportPath.replace(/\\/g, "/")}`);
+    console.log("\n=== Crawl Summary ===");
+    console.log(`Seed: ${targetUrl}`);
+    console.log(`Validated pages: ${pagesChecked}`);
+    console.log(`Pages Passed: ${pagesPassed}`);
+    console.log(`Pages Failed: ${pagesFailed}`);
+    console.log(
+      `Discovered internal links: ${discovery.counts.internal_candidates}`,
+    );
+    console.log(`Skipped links: ${discovery.counts.skipped}`);
+
+    console.log(`\nJSON report: ${aggregateReportPath.replace(/\\/g, "/")}`);
   } catch (error) {
     console.error("\nHealth check failed.");
     console.error(error.message);
