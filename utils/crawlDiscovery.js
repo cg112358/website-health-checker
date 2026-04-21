@@ -27,6 +27,27 @@ function shouldSkipHref(href) {
 
   return { skip: false };
 }
+const CLIENT_REASON_LABELS = {
+  missing_href: "Missing destinations",
+  empty_href: "Empty link values",
+  fragment_only: "Placeholder links",
+  mailto: "Email links skipped",
+  tel: "Phone links skipped",
+  javascript: "JavaScript links skipped",
+  invalid_url: "Invalid links",
+  external_origin: "External links skipped",
+};
+
+function summarizeSkippedIssues(skipped) {
+  const summary = {};
+
+  for (const item of skipped) {
+    const reason = item.reason || "unknown";
+    summary[reason] = (summary[reason] || 0) + 1;
+  }
+
+  return summary;
+}
 
 function normalizeCandidateUrl(seedUrl, href) {
   const resolvedUrl = new URL(href, seedUrl);
@@ -91,10 +112,21 @@ function buildCrawlDiscovery({ seedUrl, links }) {
     });
   }
 
+  const issueSummary = summarizeSkippedIssues(skipped);
+
+  const clientIssueSummary = Object.fromEntries(
+    Object.entries(issueSummary).map(([reason, count]) => [
+      CLIENT_REASON_LABELS[reason] || reason,
+      count,
+    ]),
+  );
+
   return {
     seedUrl,
     candidates,
     skipped,
+    issue_summary: issueSummary,
+    client_issue_summary: clientIssueSummary,
     counts: {
       raw: rawLinks.length,
       internal_candidates: candidates.length,

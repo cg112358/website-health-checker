@@ -2,7 +2,6 @@ const { chromium } = require("playwright");
 const { runPageChecks } = require("./checks/pageChecks");
 const { extractLinks } = require("./checks/linkChecks");
 const { buildCrawlDiscovery } = require("./utils/crawlDiscovery");
-const { writeReport } = require("./utils/writeReport");
 const createRunFolder = require("./utils/createRunFolder");
 const LOAD_THRESHOLD_MS = 12000;
 const parseArgs = require("./utils/parseArgs");
@@ -96,7 +95,7 @@ async function main() {
       throw new Error("Unsupported mode");
     }
 
-     const targetUrl = args.url;
+    const targetUrl = args.url;
     const keyword = args.keyword;
     const { runId, runPath, checkedAt } = createRunFolder();
 
@@ -183,18 +182,19 @@ async function main() {
         raw_links_found: discovery.counts.raw,
         discovered_internal_links: discovery.counts.internal_candidates,
         skipped_links: discovery.counts.skipped,
+        issue_summary: discovery.issue_summary,
+        client_issue_summary: discovery.client_issue_summary,
       },
       discovery: {
         candidates: discovery.candidates,
         skipped: discovery.skipped,
+        issue_summary: discovery.issue_summary,
+        client_issue_summary: discovery.client_issue_summary,
       },
       results,
     };
 
-    const aggregateReportPath = writeAggregateReport(
-      aggregateReport,
-      runPath,
-    );
+    const aggregateReportPath = writeAggregateReport(aggregateReport, runPath);
 
     console.log("\n=== Website Health Check ===");
     console.log(`Seed URL: ${seedReport.url}`);
@@ -238,8 +238,20 @@ async function main() {
     console.log(
       `Discovered internal links: ${discovery.counts.internal_candidates}`,
     );
+
     console.log(`Skipped links: ${discovery.counts.skipped}`);
 
+    if (
+      discovery.client_issue_summary &&
+      Object.keys(discovery.client_issue_summary).length > 0
+    ) {
+      console.log("\nIssue Summary:");
+      for (const [label, count] of Object.entries(
+        discovery.client_issue_summary,
+      )) {
+        console.log(`- ${label}: ${count}`);
+      }
+    }
     console.log(`\nJSON report: ${aggregateReportPath.replace(/\\/g, "/")}`);
   } catch (error) {
     console.error("\nHealth check failed.");
